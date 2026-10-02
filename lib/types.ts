@@ -1,0 +1,7 @@
+import {z} from 'zod';
+export const optionSchema=z.object({id:z.string().min(1),text:z.string().trim().min(1)});
+export const questionSchema=z.object({id:z.string().min(1),text:z.string().trim().min(1),options:z.array(optionSchema).length(4),correctOptionId:z.string().nullable(),points:z.number().int().min(1).max(100),source:z.string().optional().default(''),needsReview:z.boolean().default(false)}).superRefine((q,ctx)=>{if(new Set(q.options.map(o=>o.id)).size!==4)ctx.addIssue({code:'custom',message:'Повторяющиеся идентификаторы вариантов'});if(q.correctOptionId && !q.options.some(o=>o.id===q.correctOptionId))ctx.addIssue({code:'custom',message:'Некорректный правильный ответ'});});
+export const quizDataSchema=z.object({title:z.string().trim().min(1).max(160),instructions:z.string().max(3000).default(''),revealAnswers:z.boolean().default(false),questions:z.array(questionSchema).min(1).max(100)});
+export type Question=z.infer<typeof questionSchema>;export type QuizData=z.infer<typeof quizDataSchema>;
+export function validatePublish(data:QuizData){const parsed=quizDataSchema.safeParse(data);if(!parsed.success)return parsed.error.issues.map(i=>i.message);return data.questions.flatMap((q,i)=>!q.correctOptionId||q.needsReview?[`Вопрос ${i+1}: подтвердите правильный ответ`]:[])}
+export function publicVersion(v:QuizData){return {...v,questions:v.questions.map(({correctOptionId,needsReview,source,...rest})=>rest)};}

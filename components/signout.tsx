@@ -1,0 +1,1 @@
+'use client';import {browserDB} from '@/lib/browser';export function SignOut(){return <button className="mt-3 block text-primary text-sm" onClick={async()=>{await browserDB().auth.signOut();location.href='/login'}}>Выйти из аккаунта</button>}

@@ -1,0 +1,5 @@
+import {createClient as createServiceClient} from '@supabase/supabase-js';import {createServerClient, type CookieOptions} from '@supabase/ssr';import {cookies} from 'next/headers';
+export function adminDB(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw Error('Supabase не настроен');return createServiceClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}})}
+export async function authClient(){const jar=await cookies();return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{cookies:{getAll(){return jar.getAll()},setAll(items: {name:string;value:string;options?:CookieOptions}[]){try{items.forEach(({name,value,options})=>jar.set(name,value,options))}catch{/* Server Component cannot set cookie */}}}})}
+export async function teacher(){const sb=await authClient();const {data:{user}}=await sb.auth.getUser();if(!user||!process.env.TEACHER_EMAIL||user.email?.toLowerCase()!==process.env.TEACHER_EMAIL.toLowerCase())return null;return user;}
+export async function requireTeacher(){const u=await teacher();if(!u)throw Error('UNAUTHORIZED');return u;}
